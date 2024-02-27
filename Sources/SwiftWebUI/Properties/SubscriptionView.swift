@@ -11,7 +11,7 @@ import Combine
 
 public extension View {
   
-  @available(*, unavailable) // enable once ready
+  //@available(*, unavailable) // enable once ready
   func onReceive<P>(_ publisher: P,
                     perform action: @escaping ( P.Output ) -> Void)
        -> SubscriptionView<P, Self>
@@ -66,6 +66,7 @@ final class SubscriptionNode<P: Publisher>: HTMLWrappingNode
   var subscription : AnyCancellable?
   let action       : ( P.Output ) -> Void
   let content      : HTMLTreeNode
+  var value        : P.Output?
   
   init(elementID: ElementID, publisher: P,
        subscription: AnyCancellable? = nil,
@@ -82,11 +83,9 @@ final class SubscriptionNode<P: Publisher>: HTMLWrappingNode
   func invoke(_ webID: [String], in context: TreeStateContext) throws {
     guard elementID.isContainedInWebID(webID) else { return }
     if elementID.count == webID.count {
-      #if false // here we need the value ...
-        action()
-      #else
-        print("CANT CALL ACTION YET")
-      #endif
+        if let value = self.value {
+            action(value)
+        }
     }
     else {
       try content.invoke(webID, in: context)
@@ -95,13 +94,8 @@ final class SubscriptionNode<P: Publisher>: HTMLWrappingNode
   
   func resume() {
     subscription?.cancel()
-    let v = publisher.sink { value in
-      print("TODO: do something w/ published value:", value, self)
-      // TODO:
-      // So what we'd want to do here is enqueue an invocation request with
-      // the value.
-      // This should then call the action closure in the proper component
-      // context.
+    let v = publisher.sink { [weak self] value in
+        self?.value = value
     }
     self.subscription = AnyCancellable(v)
   }
