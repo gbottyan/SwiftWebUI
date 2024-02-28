@@ -95,7 +95,7 @@ final class SubscriptionNode<P: Publisher>: HTMLWrappingNode
       
       html.appendAttribute("id", elementID.webID)
       html += ">"
-        html += "<script language='javascript'>setTimeout(() => {console.log(\"this is the the message for: \(elementID.webID) \"); SwiftUI.valueCommit('\(elementID.webID)')}, 1000);</script>"
+        html += "<script language='javascript'>setInterval(() => {console.log(\"this is the the message for: \(elementID.webID) \"); SwiftUI.valueCommit('\(elementID.webID)')}, 1000);</script>"
       defer { html += "</div>" }
       
         self.content.generateHTML(into: &html)
