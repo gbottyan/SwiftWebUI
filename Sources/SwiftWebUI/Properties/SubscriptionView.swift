@@ -11,7 +11,7 @@ import Combine
 
 public extension View {
   
-  //@available(*, unavailable) // enable once ready
+  @available(*, unavailable) // enable once ready
   func onReceive<P>(_ publisher: P,
                     perform action: @escaping ( P.Output ) -> Void)
        -> SubscriptionView<P, Self>
@@ -38,14 +38,6 @@ public struct SubscriptionView<P: Publisher, Content: View>: View
   }
 }
 
-
-extension SubscriptionView: TreeBuildingView {
-  func buildTree(in context: TreeStateContext) -> HTMLTreeNode {
-    return context.currentBuilder.buildTree(for: self, in: context)
-  }
-}
-
-
 extension HTMLTreeBuilder {
   
   func buildTree<P: Publisher, Content: View>(
@@ -61,7 +53,7 @@ extension HTMLTreeBuilder {
                                 publisher : view.publisher,
                                 action    : view.action,
                                 content   : childTree)
-    tree.resume(context: context)
+    tree.resume()
     return tree
   }
 }
@@ -74,7 +66,6 @@ final class SubscriptionNode<P: Publisher>: HTMLWrappingNode
   var subscription : AnyCancellable?
   let action       : ( P.Output ) -> Void
   let content      : HTMLTreeNode
-  var value        : P.Output?
   
   init(elementID: ElementID, publisher: P,
        subscription: AnyCancellable? = nil,
@@ -87,39 +78,30 @@ final class SubscriptionNode<P: Publisher>: HTMLWrappingNode
     self.action       = action
     self.content      = content
   }
-    
-   
-    func generateHTML(into html: inout String) {
-      // TBD: We could use <h1> etc, but this makes it harder to update?
-      html += "<div"
-      
-      html.appendAttribute("id", elementID.webID)
-      html += ">"
-        html += "<script language='javascript'>setInterval(() => {console.log(\"this is the the message for: \(elementID.webID) \"); SwiftUI.valueCommit('\(elementID.webID)')}, 1000);</script>"
-      defer { html += "</div>" }
-      
-        self.content.generateHTML(into: &html)
-    }
   
   func invoke(_ webID: [String], in context: TreeStateContext) throws {
     guard elementID.isContainedInWebID(webID) else { return }
     if elementID.count == webID.count {
-        if let value = self.value {
-            action(value)
-        }
+      #if false // here we need the value ...
+        action()
+      #else
+        print("CANT CALL ACTION YET")
+      #endif
     }
     else {
       try content.invoke(webID, in: context)
     }
   }
   
-  func resume(context: TreeStateContext) {
+  func resume() {
     subscription?.cancel()
-    let v = publisher.sink { [weak self] value in
-        self?.value = value
-        if let eid = self?.elementID {
-            context.invalidateComponentWithID(eid)
-        }
+    let v = publisher.sink { value in
+      print("TODO: do something w/ published value:", value, self)
+      // TODO:
+      // So what we'd want to do here is enqueue an invocation request with
+      // the value.
+      // This should then call the action closure in the proper component
+      // context.
     }
     self.subscription = AnyCancellable(v)
   }
