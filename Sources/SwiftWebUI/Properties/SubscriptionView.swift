@@ -38,6 +38,14 @@ public struct SubscriptionView<P: Publisher, Content: View>: View
   }
 }
 
+
+extension SubscriptionView: TreeBuildingView {
+  func buildTree(in context: TreeStateContext) -> HTMLTreeNode {
+    return context.currentBuilder.buildTree(for: self, in: context)
+  }
+}
+
+
 extension HTMLTreeBuilder {
   
   func buildTree<P: Publisher, Content: View>(
