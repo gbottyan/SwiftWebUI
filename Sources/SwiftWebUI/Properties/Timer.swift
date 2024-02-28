@@ -20,8 +20,8 @@ import Combine
 public extension View {
     
     //@available(*, unavailable) // enable once ready
-    func timer(_ time: Double = 1000) -> TimerView<Self> {
-        return TimerView(time:time, view: self)
+    func timer(_ time: Double = 1000, message: String = "") -> TimerView<Self> {
+        return TimerView(time:time, message: message, view: self)
     }
     
 }
@@ -29,11 +29,13 @@ public extension View {
 public struct TimerView<Content: View>: View {
     public typealias Body = Never
     let time: Double
+    let message: String
     let view: Content
     
-    init(time: Double, view: Content) {
+    init(time: Double, message: String, view: Content) {
         self.view = view
         self.time = time
+        self.message = message
     }
 }
 
@@ -51,20 +53,22 @@ extension HTMLTreeBuilder {
         context.appendContentElementIDComponent()
         let childTree = buildTree(for: view.view, in: context)
         context.deleteLastElementIDComponent()
-        let tree = TimerNode(time: view.time, elementID : context.currentElementID, content: childTree)
+        let tree = TimerNode(time: view.time, message: view.message, elementID : context.currentElementID, content: childTree)
         return tree
     }
 }
 
 final class TimerNode: HTMLWrappingNode {
     var time: Double
+    let message: String
     let elementID    : ElementID
     let content      : HTMLTreeNode
     
-    init(time: Double, elementID: ElementID, content: HTMLTreeNode) {
+    init(time: Double, message: String, elementID: ElementID, content: HTMLTreeNode) {
         self.elementID    = elementID
         self.content      = content
         self.time = time
+        self.message = message
     }
     
     func generateHTML(into html: inout String) {
@@ -73,7 +77,7 @@ final class TimerNode: HTMLWrappingNode {
         
         html.appendAttribute("id", elementID.webID)
         html += ">"
-        html += "<script language='javascript'>setInterval(() => {console.log(\"this is the the message for: \(elementID.webID) \"); SwiftUI.valueCommit('\(elementID.webID)')}, \(time));</script>"
+        html += "<script language='javascript'>setInterval(() => {console.log(\"\(elementID.webID): \(message)\"); SwiftUI.valueCommit('\(elementID.webID)')}, \(time));</script>"
         defer { html += "</div>" }
         
         self.content.generateHTML(into: &html)
@@ -85,7 +89,7 @@ final class TimerNode: HTMLWrappingNode {
     
     func nodeByApplyingNewContent(_ newContent: HTMLTreeNode) -> TimerNode {
         // TBD: Create a new subscription or reuse the old?
-        return TimerNode(time: time, elementID: elementID, content: newContent)
+        return TimerNode(time: time, message: message, elementID: elementID, content: newContent)
     }
 }
 
