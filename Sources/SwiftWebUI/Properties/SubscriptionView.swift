@@ -104,6 +104,14 @@ final class SubscriptionNode<P: Publisher>: HTMLWrappingNode
     subscription?.cancel()
     let v = publisher.sink { [weak self] value in
         self?.value = value
+        do {
+            if let eid = self?.elementID.webID {
+                try self?.invoke([ eid ], in: TreeStateContext())
+            }
+        } catch let e {
+            
+        }
+        //try tree.invoke(event.webID, in: treeContext)
     }
     self.subscription = AnyCancellable(v)
   }
