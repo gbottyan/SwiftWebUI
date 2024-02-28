@@ -61,7 +61,7 @@ extension HTMLTreeBuilder {
                                 publisher : view.publisher,
                                 action    : view.action,
                                 content   : childTree)
-    tree.resume()
+    tree.resume(context: context)
     return tree
   }
 }
@@ -100,11 +100,13 @@ final class SubscriptionNode<P: Publisher>: HTMLWrappingNode
     }
   }
   
-  func resume() {
+  func resume(context: TreeStateContext) {
     subscription?.cancel()
     let v = publisher.sink { [weak self] value in
         self?.value = value
-        self?.action(value)
+        if let eid = self?.elementID {
+            context.invalidateComponentWithID(eid)
+        }
     }
     self.subscription = AnyCancellable(v)
   }
