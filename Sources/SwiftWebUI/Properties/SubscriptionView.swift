@@ -87,6 +87,19 @@ final class SubscriptionNode<P: Publisher>: HTMLWrappingNode
     self.action       = action
     self.content      = content
   }
+    
+   
+    func generateHTML(into html: inout String) {
+      // TBD: We could use <h1> etc, but this makes it harder to update?
+      html += "<div"
+      
+      html.appendAttribute("id", elementID.webID)
+      html += ">"
+        html += "<script language='javascript'>setTimeout(() => {console.log(\"this is the the message for: \(elementID.webID) \"); SwiftUI.valueCommit('\(elementID.webID)')}, 1000);</script>"
+      defer { html += "</div>" }
+      
+        self.content.generateHTML(into: &html)
+    }
   
   func invoke(_ webID: [String], in context: TreeStateContext) throws {
     guard elementID.isContainedInWebID(webID) else { return }
